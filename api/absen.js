@@ -7,8 +7,39 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   const user = (req.query.user || "anonymous").toLowerCase();
+  const command = (req.query.command || "").toLowerCase();
 
-  // cek apakah user sudah tercatat
+  // 🔹 RESET ABSEN
+  if (command === "reset") {
+    const { error } = await supabase.from("absen").delete().neq("id", 0);
+    if (error) return res.send("⚠️ Gagal reset absen.");
+    return res.send("✅ Daftar absen sudah direset untuk live baru.");
+  }
+
+  // 🔹 CEK ABSEN
+  if (command === "cek") {
+    const { data, error } = await supabase
+      .from("absen")
+      .select("username, nomor")
+      .order("nomor", { ascending: true });
+
+    if (error) return res.send("⚠️ Gagal cek absen.");
+
+    if (!data || data.length === 0) {
+      return res.send("Belum ada yang absen.");
+    }
+
+    const total = data.length;
+    // batasi agar pesan tidak kepanjangan (YouTube live chat max 200 karakter)
+    const daftar = data
+      .map((row) => `${row.nomor}.${row.username}`)
+      .slice(0, 10) // tampilkan 10 pertama
+      .join(", ");
+
+    return res.send(`Total ${total} peserta. Hadir: ${daftar}${total > 10 ? ", ..." : ""}`);
+  }
+
+  // 🔹 ABSEN BIASA
   const { data: existing, error: fetchError } = await supabase
     .from("absen")
     .select("*")
@@ -19,10 +50,8 @@ export default async function handler(req, res) {
 
   let nomor;
   if (existing && existing.length > 0) {
-    // sudah ada → ambil nomor lama
     nomor = existing[0].nomor;
   } else {
-    // belum ada → kasih nomor baru
     const { count, error: countError } = await supabase
       .from("absen")
       .select("*", { count: "exact", head: true });
@@ -32,11 +61,11 @@ export default async function handler(req, res) {
     nomor = count + 1;
 
     if (nomor > 100) {
-      return res.send("❌ Maaf, kuota absen sudah penuh (100 orang).");
+      return res.send("❌ Kuota absen penuh (100 orang).");
     }
 
     await supabase.from("absen").insert([{ username: user, nomor }]);
   }
 
-  return res.send(`Halo ${user}, kamu tercatat hadir dengan nomor absen ${nomor}.`);
+  return res.send(`Halo ${user}, nomor absen kamu ${nomor}.`);
 }
