@@ -1,0 +1,7 @@
+{
+  "name": "nightbot-absen",
+  "version": "1.0.0",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.5"
+  }
+}
