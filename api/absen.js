@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         .maybeSingle();
 
       if (existing) {
-        return res.send(`Halo ${user}, kamu sudah absen 👍`);
+        return res.send(`Halo ${user}, kamu sudah absen tadi 👍`);
       }
 
       // Hitung nomor absen
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       // Simpan ke tabel
       await supabase.from("absen").insert([{ username: user, nomor }]);
 
-      return res.send(`Halo ${user}, nomor absen kamu ${nomor}.`);
+      return res.send(`Halo ${user}, kamu asben ke-${nomor} cuy.`);
     }
 
     // ====== CEKABSEN ======
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
         .join(", ");
 
       return res.send(
-        `Total ${data.length} peserta. Hadir: ${daftar}${data.length > 10 ? ", ..." : ""}`
+        `Total ${data.length} peserta. absen: ${daftar}${data.length > 10 ? ", ..." : ""}`
       );
     }
 
