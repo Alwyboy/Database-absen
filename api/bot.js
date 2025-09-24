@@ -8,12 +8,12 @@ const supabase = createClient(
 );
 
 // =============================
-// 🔹 Fungsi ngobrol dengan xGPT (tetap dipakai untuk !chat)
+// 🔹 Fungsi ngobrol dengan xGPT
 // =============================
 async function askXGPT(user, message, history) {
   const prompt = `
 Kamu adalah AI bernama "NightbotGPT".
-Gaya bicara: ramah, pintar, sedikit humoris seperti manusia.
+Gaya bicara: ramah, pintar, sedikit humoris.
 Jawaban harus singkat (maks 2 kalimat), cocok untuk live chat YouTube.
 
 Riwayat obrolan dengan ${user}:
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
   // ----------------------------
   // RESET ABSEN
   // ----------------------------
-  if (command === "resetabsen") {
+  if (command.includes("resetabsen")) {
     await supabase.from("absen").delete().neq("id", 0);
     return res.send("✅ Daftar absen sudah direset yang mulia.");
   }
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
   // ----------------------------
   // CEK ABSEN
   // ----------------------------
-  if (command === "cekabsen") {
+  if (command.includes("cekabsen")) {
     const { data, error } = await supabase
       .from("absen")
       .select("username, nomor")
@@ -67,14 +67,14 @@ export default async function handler(req, res) {
       .join(", ");
 
     return res.send(
-      `Total ${total} peserta. absen: ${daftar}${total > 10 ? ", ..." : ""}`
+      `Total ${total} absen. Hadir: ${daftar}${total > 10 ? ", ..." : ""}`
     );
   }
 
   // ----------------------------
-  // ABSEN (TANPA MOTIVASI)
+  // ABSEN (FLEKSIBEL)
   // ----------------------------
-  if (command === "absen") {
+  if (command.includes("absen")) {
     const { data: existing, error: fetchError } = await supabase
       .from("absen")
       .select("*")
@@ -99,17 +99,15 @@ export default async function handler(req, res) {
       await supabase.from("absen").insert([{ username: user, nomor }]);
     }
 
-    // Balasan singkat tanpa motivasi
-    return res.send(`Halo ${user}, kamu absen ke ${nomor}.`);
+    return res.send(`Halo ${user}, kamu absen ke-${nomor}.`);
   }
 
   // ----------------------------
-  // CHAT (memakai xGPT dan menyimpan history)
+  // CHAT
   // ----------------------------
-  if (command === "nightbot") {
-    if (!message) return res.send("Mau ngomong apa? 😅");
+  if (command.includes("bot")) {
+    if (!message) return res.send("Mau ngomong apa cuy? 😅");
 
-    // Ambil history user
     let { data: history } = await supabase
       .from("chat_history")
       .select("role, message")
@@ -119,10 +117,8 @@ export default async function handler(req, res) {
 
     history = history || [];
 
-    // Tanya xGPT
     const reply = await askXGPT(user, message, history);
 
-    // Simpan history baru
     await supabase.from("chat_history").insert([
       { username: user, role: "user", message },
       { username: user, role: "bot", message: reply }
@@ -134,5 +130,5 @@ export default async function handler(req, res) {
   // ----------------------------
   // DEFAULT
   // ----------------------------
-  return res.send("Perintah tidak dikenal. Coba absen, cekabsen, atau Nightbot.");
-          }
+  return res.send("Perintah tidak dikenal. Coba  ketik absen, cekabsen, atau bot.");
+      }
