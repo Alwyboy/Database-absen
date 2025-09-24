@@ -1,71 +1,71 @@
 import { createClient } from "@supabase/supabase-js";
 
+// Koneksi ke Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
 
 export default async function handler(req, res) {
-  const user = (req.query.user || "anonymous").toLowerCase();
-  const command = (req.query.command || "").toLowerCase();
+  try {
+    const user = (req.query.user || "anon").toLowerCase();
+    const command = (req.query.command || "").toLowerCase();
 
-  // 🔹 RESET ABSEN
-  if (command === "reset") {
-    const { error } = await supabase.from("absen").delete().neq("id", 0);
-    if (error) return res.send("⚠️ Gagal reset absen.");
-    return res.send("✅ Daftar absen sudah direset untuk live baru.");
-  }
+    // ====== ABSEN FLEXIBLE ======
+    if (command.includes("absen")) {
+      // Cek apakah user sudah absen
+      let { data: existing } = await supabase
+        .from("absen")
+        .select("id, nomor")
+        .eq("username", user)
+        .maybeSingle();
 
-  // 🔹 CEK ABSEN
-  if (command === "cek") {
-    const { data, error } = await supabase
-      .from("absen")
-      .select("username, nomor")
-      .order("nomor", { ascending: true });
+      if (existing) {
+        return res.send(`Halo ${user}, kamu sudah absen 👍`);
+      }
 
-    if (error) return res.send("⚠️ Gagal cek absen.");
+      // Hitung nomor absen
+      let { count } = await supabase
+        .from("absen")
+        .select("*", { count: "exact", head: true });
 
-    if (!data || data.length === 0) {
-      return res.send("Belum ada yang absen.");
+      const nomor = count + 1;
+
+      // Simpan ke tabel
+      await supabase.from("absen").insert([{ username: user, nomor }]);
+
+      return res.send(`Halo ${user}, nomor absen kamu ${nomor}.`);
     }
 
-    const total = data.length;
-    // batasi agar pesan tidak kepanjangan (YouTube live chat max 200 karakter)
-    const daftar = data
-      .map((row) => `${row.nomor}.${row.username}`)
-      .slice(0, 10) // tampilkan 10 pertama
-      .join(", ");
+    // ====== CEKABSEN ======
+    if (command.includes("cekabsen")) {
+      let { data } = await supabase.from("absen").select("username, nomor");
 
-    return res.send(`Total ${total} peserta. Hadir: ${daftar}${total > 10 ? ", ..." : ""}`);
-  }
+      if (!data || data.length === 0) {
+        return res.send("Belum ada yang absen 😅");
+      }
 
-  // 🔹 ABSEN BIASA
-  const { data: existing, error: fetchError } = await supabase
-    .from("absen")
-    .select("*")
-    .eq("username", user)
-    .limit(1);
+      const daftar = data
+        .map((d) => `${d.nomor}.${d.username}`)
+        .slice(0, 10) // batasi 10 nama agar chat tidak panjang
+        .join(", ");
 
-  if (fetchError) return res.send("⚠️ Error ambil data absen.");
-
-  let nomor;
-  if (existing && existing.length > 0) {
-    nomor = existing[0].nomor;
-  } else {
-    const { count, error: countError } = await supabase
-      .from("absen")
-      .select("*", { count: "exact", head: true });
-
-    if (countError) return res.send("⚠️ Error hitung absen.");
-
-    nomor = count + 1;
-
-    if (nomor > 100) {
-      return res.send("❌ Kuota absen penuh (100 orang).");
+      return res.send(
+        `Total ${data.length} peserta. Hadir: ${daftar}${data.length > 10 ? ", ..." : ""}`
+      );
     }
 
-    await supabase.from("absen").insert([{ username: user, nomor }]);
-  }
+    // ====== RESETABSEN ======
+    if (command.includes("resetabsen")) {
+      await supabase.from("absen").delete().neq("id", 0);
+      return res.send("✅ Daftar absen sudah direset untuk live baru.");
+    }
 
-  return res.send(`Halo ${user}, nomor absen kamu ${nomor}.`);
+    // ====== DEFAULT ======
+    return res.send("Perintah absen tidak dikenal 🤔");
+
+  } catch (err) {
+    console.error("Error absen.js:", err);
+    return res.status(500).send("Terjadi kesalahan di server.");
+  }
 }
