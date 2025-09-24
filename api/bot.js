@@ -6,7 +6,6 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-// Fungsi utama handler API
 export default async function handler(req, res) {
   try {
     const user = (req.query.user || "anon").toLowerCase();
@@ -23,7 +22,7 @@ export default async function handler(req, res) {
         .maybeSingle();
 
       if (existing) {
-        return res.send(`Halo ${user}, kamu sudah absen tadi 👍`);
+        return res.send(`Halo ${user}, kamu sudah absen 👍`);
       }
 
       // Hitung nomor absen
@@ -36,7 +35,7 @@ export default async function handler(req, res) {
       // Simpan ke tabel
       await supabase.from("absen").insert([{ username: user, nomor }]);
 
-      return res.send(`Halo ${user}, kamu absen ke-${nomor} cuy.`);
+      return res.send(`Halo ${user}, nomor absen kamu ${nomor}.`);
     }
 
     // ====== CEKABSEN ======
@@ -93,9 +92,8 @@ export default async function handler(req, res) {
 
     // ====== DEFAULT ======
     return res.send("Perintah tidak dikenal 🤔");
-
   } catch (err) {
     console.error("Error bot.js:", err);
     return res.status(500).send("Terjadi kesalahan di server.");
   }
-  }
+}
