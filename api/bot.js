@@ -60,7 +60,7 @@ export default async function handler(req, res) {
   // ----------------------------
   if (command === "resetabsen") {
     await supabase.from("absen").delete().neq("id", 0);
-    return res.send("✅ Daftar absen direset untuk live baru.");
+    return res.send("Baik yg mulia, daftar absen sudah direset ✅");
   }
 
   // ----------------------------
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       .join(", ");
 
     return res.send(
-      `Total ${total} peserta. Hadir: ${daftar}${total > 10 ? ", ..." : ""}`
+      `Total ${total} peserta. absen: ${daftar}${total > 10 ? ", ..." : ""}`
     );
   }
 
