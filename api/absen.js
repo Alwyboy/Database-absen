@@ -34,31 +34,35 @@ export default async function handler(req, res) {
       // Simpan ke tabel
       await supabase.from("absen").insert([{ username: user, nomor }]);
 
-      return res.send(`Halo ${user}, kamu asben ke-${nomor} cuy.`);
+      return res.send(`Halo ${user}, kamu absen ke-${nomor} cuy.`);
     }
 
-    // ====== CEKABSEN ======
+    // ====== CEKABSEN SINGKAT ======
     if (command.includes("cekabsen")) {
-      let { data } = await supabase.from("absen").select("username, nomor");
+      let { data } = await supabase
+        .from("absen")
+        .select("username, nomor")
+        .order("nomor", { ascending: true });
 
-      if (!data || data.length === 0) {
-        return res.send("Belum ada yang absen 😅");
-      }
+      if (!data || data.length === 0) return res.send("Belum ada yang absen 😅");
 
-      const daftar = data
+      // Ambil maksimal 5 nama terakhir supaya singkat
+      const daftarSingkat = data
+        .slice(0, 5)
         .map((d) => `${d.nomor}.${d.username}`)
-        .slice(0, 10) // batasi 10 nama agar chat tidak panjang
         .join(", ");
 
       return res.send(
-        `Total ${data.length} peserta. absen: ${daftar}${data.length > 10 ? ", ..." : ""}`
+        `Total ${data.length} peserta. absen: ${daftarSingkat}${
+          data.length > 5 ? ", ..." : ""
+        }`
       );
     }
 
     // ====== RESETABSEN ======
     if (command.includes("resetabsen")) {
       await supabase.from("absen").delete().neq("id", 0);
-      return res.send("✅ Daftar absen sudah direset untuk live baru.");
+      return res.send("✅ Daftar absen sudah direset yang mulia.");
     }
 
     // ====== DEFAULT ======
