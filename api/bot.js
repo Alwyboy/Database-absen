@@ -27,9 +27,9 @@ async function getMotivasi(user, nomor) {
 // =============================
 async function askXGPT(user, message, history) {
   const prompt = `
-Kamu adalah AI bernama "Nightbot".
-Gaya bicara: ramah, pintar, sedikit humoris.
-Jawaban harus singkat (maks 2 kalimat), cocok untuk live chat YouTube.
+Kamu adalah AI seperti manusia bernama "Nightbot".
+Gaya bicara: ramah, pintar, sedikit humoris, dan jangan kaku, boleh pakai emoji.
+Jawaban harus super singkat (maks 2 kalimat), cocok untuk live chat YouTube.
 
 Riwayat obrolan dengan ${user}:
 ${history.map(h => `- ${h.role}: ${h.message}`).join("\n")}
@@ -111,7 +111,7 @@ export default async function handler(req, res) {
     }
 
     const motivasi = await getMotivasi(user, nomor);
-    return res.send(`Halo ${user}, nomor absen kamu ${nomor}. ${motivasi}`);
+    return res.send(`Halo ${user}, kamu absen ke- ${nomor}. ${motivasi}`);
   }
 
   // ----------------------------
@@ -145,5 +145,5 @@ export default async function handler(req, res) {
   // ----------------------------
   // DEFAULT
   // ----------------------------
-  return res.send("Perintah tidak dikenal. Coba ketik absen, cekabsen, resetabsen, atau nightbot.");
+  return res.send("Perintah tidak dikenal. Coba ketik absen, cekabsen, atau nightbot.");
 }
